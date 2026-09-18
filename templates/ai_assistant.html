@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Ask Farbod | AI-Hub{% endblock %}
+{% block page_heading %}AI Assistant{% endblock %}
+{% block content %}
+<div class="fh-workspace" id="assistant" data-csrf="{{session.search_csrf}}" data-query-url="{{url_for('assistant_query')}}" data-status-url="{{url_for('assistant_index_status')}}" data-reindex-url="{{url_for('assistant_reindex')}}">
+  <section class="fh-hero">
+    <div class="fh-eyebrow"><span class="fh-spark">✦</span> YOUR INFRASTRUCTURE, CONNECTED</div>
+    <h2>One question.<br><span>Your knowledge, together.</span></h2>
+    <p>Find the details across your assets, manuals and technical documents.<br>Follow every answer back to its source.</p>
+    <form id="fh-search" class="fh-composer" role="search">
+      <label for="fh-question" class="visually-hidden">Ask about your infrastructure</label>
+      <div class="fh-input-row"><i class="bi bi-stars" aria-hidden="true"></i><textarea id="fh-question" name="q" rows="2" maxlength="2000" required dir="auto" placeholder="Find my DL380 G10 servers and their memory expansion instructions…">{{q}}</textarea></div>
+      <div class="fh-composer-footer"><span><i class="bi bi-shield-check"></i> Your permitted sources · English / فارسی</span><button id="fh-submit" type="submit">Search knowledge <i class="bi bi-arrow-up-right"></i></button></div>
+    </form>
+    <div class="fh-suggestions"><span>TRY ASKING</span><button type="button" data-prompt="List all DL380 G10 servers">DL380 inventory <i class="bi bi-arrow-up-right"></i></button><button type="button" data-prompt="Show storage systems with warning or critical status">Storage health <i class="bi bi-arrow-up-right"></i></button><button type="button" data-prompt="Find firmware documents for HPE servers">Firmware evidence <i class="bi bi-arrow-up-right"></i></button><button type="button" data-prompt="اطلاعات فریمور سرور">جستجوی فارسی <i class="bi bi-arrow-up-right"></i></button></div>
+  </section>
+  <div class="fh-layout">
+    <main class="fh-results">
+      <div id="fh-loading" class="fh-panel fh-loading" hidden role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span><div><strong>Searching your sources</strong><p>Reading new or changed files, then ranking the evidence. Large documents and OCR can take longer on the first search.</p></div></div>
+      <div id="fh-error" class="alert alert-danger" hidden role="alert"></div>
+      <section id="fh-welcome" class="fh-panel fh-welcome"><div class="fh-welcome-icon"><i class="bi bi-intersect"></i></div><h3>From inventory to the exact page.</h3><p>Search a model, serial number, specification or technical question. Matching records and document excerpts appear here together.</p><div class="fh-feature-row"><span><i class="bi bi-hdd-stack"></i> Asset details</span><span><i class="bi bi-file-earmark-text"></i> Document contents</span><span><i class="bi bi-link-45deg"></i> Source references</span></div></section>
+      <section id="fh-answer-panel" class="fh-panel" hidden><div class="fh-panel-head"><h3><span class="fh-spark">✦</span> What I found</h3><span id="fh-provider" class="fh-badge"></span></div><div id="fh-model-warning" class="fh-notice" hidden></div><div id="fh-answer" class="fh-answer" dir="auto"></div><div id="fh-evidence-note" class="fh-footnote"></div></section>
+      <section id="fh-evidence" hidden><div class="fh-result-bar"><h3>Explore the evidence</h3><div class="fh-tabs" role="group" aria-label="Filter results"><button type="button" data-filter="all" aria-pressed="true">All <span id="fh-count-all">0</span></button><button type="button" data-filter="assets" aria-pressed="false">Assets <span id="fh-count-assets">0</span></button><button type="button" data-filter="documents" aria-pressed="false">Documents <span id="fh-count-documents">0</span></button></div></div><div id="fh-cards"></div><p id="fh-empty" class="fh-panel" hidden>No results in this category. Try fewer keywords or a different model.</p></section>
+    </main>
+    <aside class="fh-context">
+      <section class="fh-panel ai-tool-panel"><div class="fh-panel-head"><h3>Available tools</h3><i class="bi bi-tools"></i></div><div class="ai-tool-list"><span><i class="bi bi-search"></i>Asset Search</span><span><i class="bi bi-file-earmark-text"></i>Evidence Retrieval</span><span><i class="bi bi-shield-check"></i>Role Filtering</span><span><i class="bi bi-link-45deg"></i>Source Citations</span></div><p class="fh-subtle">The assistant searches only sources permitted for your current role.</p></section>
+      <section class="fh-panel"><div class="fh-panel-head"><h3>Search coverage</h3><i class="bi bi-database-check"></i></div><p class="fh-subtle">Sources available to your role</p><div class="fh-source"><i class="bi bi-hdd-stack"></i><span>Asset inventory</span><small>Current records</small></div>{% for source in sources %}<div class="fh-source"><i class="bi bi-file-earmark-text"></i><span>{{source}}</span></div>{% endfor %}<div class="fh-index-status" id="fh-index-status" aria-live="polite">Checking document index…</div><div id="fh-index-issues"></div>{% if current_user.role == 'admin' %}<button id="fh-reindex" class="fh-secondary" type="button"><i class="bi bi-arrow-clockwise"></i> Re-read documents</button>{% endif %}</section>
+      <section class="fh-panel fh-mode"><span class="fh-eyebrow">ANSWER MODE</span><h3>{{ 'Local AI + evidence' if ollama else 'Local evidence search' }}</h3><p>{{ 'Ollama summarizes the retrieved passages and asset fields with citations.' if ollama else 'Works without an AI service. Shows matching records and exact excerpts. Configure Ollama for conversational summaries.' }}</p><small>Document text is treated as evidence, never as instructions.</small></section>
+      <section class="fh-panel" id="fh-activity-panel" hidden><h3>Search activity</h3><div id="fh-activity"></div></section>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{url_for('static',filename='assistant.js',v=APP_VERSION)}}"></script>{% endblock %}

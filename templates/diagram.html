@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Relationship Diagram{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+  <h4 class="mb-0"><i class="bi bi-diagram-3-fill"></i> Asset Relationship Diagram</h4>
+  <div class="d-flex gap-2">
+    {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor %}
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#linkModal"><i class="bi bi-link-45deg"></i> Create Relationship</button>
+    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#vdxImportModal"><i class="bi bi-upload"></i> Import from Visio</button>
+    {% endif %}
+    <a class="btn btn-sm btn-outline-success" href="{{ url_for('export_diagram_vdx') }}"><i class="bi bi-download"></i> Visio (.vdx)</a>
+  </div>
+</div>
+<p class="text-muted small">Drag assets to reposition them; positions are saved automatically. To remove a relationship, select its line and confirm deletion.</p>
+
+<div id="network" class="border rounded shadow-sm bg-white" style="height:70vh"></div>
+
+<!-- Create Link modal -->
+<div class="modal fade" id="linkModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Create Relationship Between Assets</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Source Asset</label>
+          <input type="text" id="srcSearch" class="form-control form-control-sm" placeholder="Search by name...">
+          <div id="srcResults" class="list-group mt-1"></div>
+          <div id="srcSelected" class="small text-success mt-1"></div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Target Asset</label>
+          <input type="text" id="tgtSearch" class="form-control form-control-sm" placeholder="Search by name...">
+          <div id="tgtResults" class="list-group mt-1"></div>
+          <div id="tgtSelected" class="small text-success mt-1"></div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Relationship Type</label>
+          <input type="text" id="linkType" class="form-control form-control-sm" placeholder="e.g. connected to, hosts, part of" value="connected to">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitLink()">Create Relationship</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import from Visio modal -->
+<div class="modal fade" id="vdxImportModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('import_diagram_vdx') }}" enctype="multipart/form-data">
+        <div class="modal-header"><h5 class="modal-title">Import Shape Positions from Visio (.vdx)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="file" name="file" class="form-control" accept=".vdx" required>
+          <p class="small text-muted mt-2">Each shape is matched to an existing asset name and its position is updated.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary">Login</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/vis-network/vis-network.min.js') }}"></script>
+<script>
+let network, nodesDS, edgesDS;
+let selected = {src: null, tgt: null};
+const canEdit = {{ 'true' if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor else 'false' }};
+
+async function loadDiagram() {
+  const res = await fetch("{{ url_for('api_diagram_data') }}");
+  const data = await res.json();
+  const groupColors = {}; let hue = 0;
+  const groups = [...new Set(data.nodes.map(n => n.group))];
+  const nodes = data.nodes.map((n, i) => ({
+    id: n.id, label: n.label, group: n.group,
+    x: n.x, y: n.y,
+    shape: 'box', margin: 8,
+  }));
+  const edges = data.edges.map(e => ({id: e.id, from: e.from, to: e.to, label: e.label, arrows: 'to', font: {align: 'middle'}}));
+  nodesDS = new vis.DataSet(nodes);
+  edgesDS = new vis.DataSet(edges);
+  const container = document.getElementById('network');
+  const options = {
+    physics: {stabilization: true, barnesHut: {springLength: 140}},
+    interaction: {hover: true},
+    edges: {smooth: {type: 'dynamic'}, color: '#888'},
+    nodes: {font: {size: 13}, color: {background: '#e7f1ff', border: '#0d6efd'}},
+  };
+  network = new vis.Network(container, {nodes: nodesDS, edges: edgesDS}, options);
+
+  if (canEdit) {
+    network.on('dragEnd', function (params) {
+      params.nodes.forEach(async (nodeId) => {
+        const pos = network.getPositions([nodeId])[nodeId];
+        await fetch("{{ url_for('api_save_position') }}", {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({node_key: nodeId, x: pos.x, y: pos.y})
+        });
+      });
+    });
+    network.on('selectEdge', async function (params) {
+      if (!params.edges.length) return;
+      if (confirm('Delete this relationship?')) {
+        await fetch(`/api/diagram/link/${params.edges[0]}`, {method: 'DELETE'});
+        loadDiagram();
+      }
+    });
+  }
+}
+loadDiagram();
+
+function wireSearch(inputId, resultsId, selectedId, role) {
+  const input = document.getElementById(inputId);
+  input.addEventListener('input', async () => {
+    const q = input.value.trim();
+    const box = document.getElementById(resultsId);
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    const res = await fetch(`/api/diagram/search-assets?q=${encodeURIComponent(q)}`);
+    const items = await res.json();
+    box.innerHTML = items.map(it =>
+      `<a href="#" class="list-group-item list-group-item-action" onclick='pick("${role}", ${JSON.stringify(it).replace(/'/g, "&#39;")}); return false;'>${it.label} <span class="badge bg-light text-dark">${it.table}</span></a>`
+    ).join('');
+  });
+}
+wireSearch('srcSearch', 'srcResults', 'srcSelected', 'src');
+wireSearch('tgtSearch', 'tgtResults', 'tgtSelected', 'tgt');
+
+function pick(role, item) {
+  selected[role] = item;
+  document.getElementById(role + 'Selected').innerText = 'Selected: ' + item.label;
+  document.getElementById(role + 'Results').innerHTML = '';
+}
+
+async function submitLink() {
+  if (!selected.src || !selected.tgt) { alert('Select both assets.'); return; }
+  await fetch("{{ url_for('api_create_link') }}", {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      source_table: selected.src.table, source_id: selected.src.id,
+      target_table: selected.tgt.table, target_id: selected.tgt.id,
+      link_type: document.getElementById('linkType').value
+    })
+  });
+  bootstrap.Modal.getInstance(document.getElementById('linkModal')).hide();
+  selected = {src: null, tgt: null};
+  loadDiagram();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}{{ spec.label }}{% endblock %}
+{% block page_heading %}{{ spec.label }}{% endblock %}
+{% block content %}
+<div class="inventory-command spatial-card">
+  <div class="inventory-title"><div class="inventory-orb"><i class="bi {{ spec.icon }}"></i></div><div><span class="intel-label">ASSET INVENTORY</span><h2>{{ spec.label }}</h2><p>{{ rows|length }} managed records · Open any row for its complete 360° profile.</p></div></div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if table in ['servers','storage'] and ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.manager %}<form id="bulkDeleteForm" method="post" action="{{ url_for('asset_bulk_delete', table=table) }}" class="d-inline"><button id="bulkDeleteBtn" class="btn btn-sm btn-outline-danger" type="submit" disabled onclick="return confirm('Delete all selected equipment?')"><i class="bi bi-trash"></i> Delete Selected <span id="selectedCount">0</span></button></form>{% endif %}
+    <form class="d-flex" method="get">
+      <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search...">
+      <button class="btn btn-sm btn-outline-secondary ms-1">Search</button>
+    </form>
+    <a class="btn btn-sm btn-outline-success" href="{{ url_for('export_csv', table=table) }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+    <a class="btn btn-sm btn-outline-success" href="{{ url_for('export_xlsx', table=table) }}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor %}
+    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-upload"></i> Import Data</button>
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assetModal" onclick="openCreate()"><i class="bi bi-plus-lg"></i> Add</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="table-scroll-container">
+  <div class="table-responsive shadow-sm equipment-table-scroll" id="equipmentTableScroll">
+<table class="table table-hover table-sm bg-white align-middle equipment-table">
+  <thead class="table-light">
+    <tr>
+      <th>{% if table in ['servers','storage'] and ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.manager %}<input type="checkbox" id="selectAll" title="Select all">{% else %}#{% endif %}</th>
+      {% for f in spec.fields %}<th>{{ f[1] }}</th>{% endfor %}
+      <th style="width:160px">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{% if table in ['servers','storage'] and ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.manager %}<input class="row-select" type="checkbox" name="selected_ids" value="{{ row['id'] }}" form="bulkDeleteForm">{% else %}{{ row['id'] }}{% endif %}</td>
+      {% for f in spec.fields %}<td>{{ row[f[0]] or '' }}</td>{% endfor %}
+      <td class="text-nowrap">
+        <a class="btn btn-sm btn-outline-info" title="Open Asset 360°" href="{{ url_for('asset_detail', table=table, row_id=row['id']) }}"><i class="bi bi-eye"></i></a>
+        {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor %}
+        <button class="btn btn-sm btn-outline-primary" title="Edit" data-bs-toggle="modal" data-bs-target="#assetModal"
+          onclick='openEdit({{ row|todict|tojson }})'><i class="bi bi-pencil"></i></button>
+        {% endif %}
+        <a class="btn btn-sm btn-outline-secondary" title="Components / Sub-objects" href="{{ url_for('sub_objects', table=table, row_id=row['id']) }}"><i class="bi bi-diagram-2"></i></a>
+        {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.manager %}
+        <form method="post" action="{{ url_for('asset_delete', table=table, row_id=row['id']) }}" class="d-inline" onsubmit="return confirm('Delete this item?')">
+          <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="{{ spec.fields|length + 2 }}" class="text-center text-muted py-4">No records found</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+  </div>
+  <div class="equipment-horizontal-scroll" id="equipmentHorizontalScroll" aria-label="Horizontal table scroll">
+    <div></div>
+  </div>
+</div>
+
+<!-- Flexible add/edit window (modal, draggable/resizable via style.css) -->
+<div class="modal fade asset-entry-modal" id="assetModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl resizable-modal asset-modal-{{ table }} modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="assetForm" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="assetModalTitle">Add {{ spec.label }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body asset-entry-body">
+          <div class="asset-entry-toolbar"><span><i class="bi bi-sliders2"></i> Equipment Parameters</span><small>All fields are editable</small></div>
+          <div class="row g-3">
+            {% for key, label, ftype, lookup in spec.fields %}
+            {% if table == 'hpe_synergy_servers' and key == 'compute_1_server_ip' %}<div class="col-12 hpe-section-title"><i class="bi bi-cpu-fill"></i> Compute Modules 1–12</div>{% endif %}
+            {% if table == 'hpe_synergy_servers' and key == 'icb_1_notes' %}<div class="col-12 hpe-section-title"><i class="bi bi-diagram-3-fill"></i> ICB 1–6</div>{% endif %}
+            <div class="{% if table == 'servers' %}{% if ftype == 'textarea' %}col-12{% else %}col-6 col-lg-3{% endif %}{% elif table == 'hpe_synergy_servers' %}{% if ftype == 'textarea' %}col-12 col-lg-3{% else %}col-6 col-lg-3{% endif %}{% else %}{% if ftype == 'textarea' %}col-md-12{% else %}col-md-6{% endif %}{% endif %}">
+              <label class="form-label">{{ label }}</label>
+              {% if lookup %}
+              <div class="input-group">
+                <select class="form-select asset-field" name="{{ key }}" id="field_{{ key }}" aria-label="{{ label }}">
+                  <option value=""></option>
+                  {% for v in lookups[lookup] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+                <button class="btn btn-outline-secondary" type="button" title="Add new value" onclick="quickAdd('{{ lookup }}', 'field_{{ key }}')"><i class="bi bi-plus"></i></button>
+              </div>
+              {% elif ftype == 'textarea' %}
+              <textarea class="form-control asset-field" name="{{ key }}" id="field_{{ key }}" rows="2"></textarea>
+              {% else %}
+              <input type="text" class="form-control asset-field" name="{{ key }}" id="field_{{ key }}" autocomplete="off">
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Import window -->
+<div class="modal fade import-data-modal" id="importModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('import_table', table=table) }}" enctype="multipart/form-data" id="importDataForm">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-cloud-arrow-up me-2"></i>Import Data</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="import-dropzone" for="importFile">
+            <i class="bi bi-file-earmark-arrow-up"></i>
+            <strong>Select CSV or Excel file</strong>
+            <span id="importFileName">Click here to choose a file</span>
+            <small>Supported: .csv, .txt, .xlsx</small>
+          </label>
+          <input id="importFile" type="file" name="file" accept=".csv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+          <p class="text-muted small mt-3 mb-0">Column headers can match either the field names or the displayed labels for {{ spec.label }}.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const createUrl = "{{ url_for('asset_create', table=table) }}";
+function editUrl(id) { return "{{ url_for('asset_list', table=table) }}/" + id + "/edit"; }
+
+function openCreate() {
+  const form = document.getElementById('assetForm');
+  document.getElementById('assetModalTitle').innerText = "Add {{ spec.label }}";
+  form.action = createUrl;
+  form.reset();
+  form.querySelectorAll('.asset-field').forEach(el => {
+    el.disabled = false;
+    el.readOnly = false;
+    el.removeAttribute('aria-disabled');
+  });
+}
+
+function openEdit(row) {
+  document.getElementById('assetModalTitle').innerText = "Edit record #" + row.id;
+  document.getElementById('assetForm').querySelectorAll('.asset-field').forEach(el => { el.disabled=false; el.readOnly=false; });
+  document.getElementById('assetForm').action = editUrl(row.id);
+  {% for key, label, ftype, lookup in spec.fields %}
+  if (document.getElementById('field_{{ key }}')) document.getElementById('field_{{ key }}').value = row['{{ key }}'] || '';
+  {% endfor %}
+}
+
+// Defensive fix: Bootstrap focus/backdrop handling must never leave asset fields disabled.
+const importFile = document.getElementById('importFile');
+const importFileName = document.getElementById('importFileName');
+if (importFile) {
+  importFile.addEventListener('change', function () {
+    importFileName.textContent = this.files && this.files.length ? this.files[0].name : 'Click here to choose a file';
+  });
+}
+document.addEventListener('shown.bs.modal', function (event) {
+  if (event.target.id === 'importModal') {
+    const input = event.target.querySelector('#importFile');
+    if (input) { input.disabled = false; input.removeAttribute('aria-disabled'); }
+  }
+  if (event.target.id !== 'assetModal') return;
+  const scrollBody = event.target.querySelector('.asset-entry-body');
+  if (scrollBody) {
+    scrollBody.style.overflowY = 'scroll';
+    scrollBody.style.overflowX = 'hidden';
+  }
+  event.target.querySelectorAll('.asset-field').forEach(function (el) {
+    el.disabled = false;
+    el.readOnly = false;
+    el.removeAttribute('aria-disabled');
+  });
+  const first = event.target.querySelector('input.asset-field, textarea.asset-field, select.asset-field');
+  if (first) setTimeout(function(){ try { first.focus({preventScroll:true}); } catch(e) { first.focus(); } }, 50);
+});
+
+function initEquipmentHorizontalScroll() {
+  const tableScroll = document.getElementById('equipmentTableScroll');
+  const bar = document.getElementById('equipmentHorizontalScroll');
+  const inner = bar ? bar.firstElementChild : null;
+  const table = tableScroll ? tableScroll.querySelector('table') : null;
+  if (!tableScroll || !bar || !inner || !table) return;
+
+  function syncWidth() {
+    inner.style.width = table.scrollWidth + 'px';
+    bar.scrollLeft = tableScroll.scrollLeft;
+  }
+  let syncing = false;
+  tableScroll.addEventListener('scroll', function () {
+    if (syncing) return;
+    syncing = true; bar.scrollLeft = tableScroll.scrollLeft; syncing = false;
+  }, {passive:true});
+  bar.addEventListener('scroll', function () {
+    if (syncing) return;
+    syncing = true; tableScroll.scrollLeft = bar.scrollLeft; syncing = false;
+  }, {passive:true});
+  window.addEventListener('resize', syncWidth);
+  if (window.ResizeObserver) new ResizeObserver(syncWidth).observe(table);
+  syncWidth();
+}
+document.addEventListener('DOMContentLoaded', initEquipmentHorizontalScroll);
+function initBulkDelete(){
+  const all=document.getElementById('selectAll'), btn=document.getElementById('bulkDeleteBtn'), count=document.getElementById('selectedCount'), form=document.getElementById('bulkDeleteForm');
+  if(!all||!btn||!form)return;
+  const boxes=()=>Array.from(document.querySelectorAll('.row-select'));
+  function sync(){const selected=boxes().filter(x=>x.checked); count.textContent=selected.length; btn.disabled=!selected.length; all.checked=boxes().length>0&&selected.length===boxes().length; all.indeterminate=selected.length>0&&selected.length<boxes().length;}
+  all.addEventListener('change',()=>{boxes().forEach(x=>x.checked=all.checked);sync()}); boxes().forEach(x=>x.addEventListener('change',sync)); form.addEventListener('submit',()=>{if(!boxes().some(x=>x.checked))return false;}); sync();
+}
+document.addEventListener('DOMContentLoaded', initBulkDelete);
+
+async function quickAdd(lookupKey, selectId) {
+  const value = prompt("New value to add to this list:");
+  if (!value) return;
+  const res = await fetch(`/api/lookups/${lookupKey}/quick-add`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({value: value})
+  });
+  const data = await res.json();
+  const select = document.getElementById(selectId);
+  select.innerHTML = '<option value=""></option>' + data.values.map(v => `<option value="${v}">${v}</option>`).join('');
+  select.value = value;
+}
+</script>
+{% endblock %}

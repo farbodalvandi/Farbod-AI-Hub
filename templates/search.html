@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Search | Farbod Asset Manager{% endblock %}
+{% block page_heading %}Search{% endblock %}
+{% block content %}
+<div class="section-title"><div><span>GLOBAL SEARCH</span><h3>Results for “{{ q }}”</h3></div><a href="{{ url_for('dashboard') }}">Dashboard <i class="bi bi-arrow-right"></i></a></div>
+{% if q %}
+<div class="dash-card search-results-card">
+  <div class="dash-card-head"><h4><i class="bi bi-boxes"></i> Equipment</h4><span class="text-muted small">{{ results|length }} result(s)</span></div>
+  <div class="search-results-list">
+    {% for r in results %}
+    <a class="search-result" href="{{ url_for('asset_list', table=r.table) }}?q={{ q|urlencode }}"><div class="quick-icon"><i class="bi bi-server"></i></div><div><strong>{{ r.label }}</strong><small>{{ SCHEMAS[r.table].label }} · Record #{{ r.id }}</small></div><i class="bi bi-chevron-left"></i></a>
+    {% else %}<div class="text-muted p-4">No equipment matched your search.</div>{% endfor %}
+  </div>
+</div>
+<div class="dash-card search-results-card mt-3">
+  <div class="dash-card-head"><h4><i class="bi bi-collection"></i> ISO / VSDX Files</h4><span class="text-muted small">{{ iso_results|length }} result(s)</span></div>
+  <div class="search-results-list">
+    {% for f in iso_results %}
+    <a class="search-result" href="{% if (f.media_type or 'iso') == 'vsdx' %}{{ url_for('iso_view', iso_id=f.id) }}{% else %}{{ url_for('iso_download', iso_id=f.id) }}{% endif %}"><div class="quick-icon"><i class="bi {% if (f.media_type or 'iso') == 'vsdx' %}bi-diagram-3-fill{% else %}bi-disc{% endif %}"></div><div><strong>{{ f.original_name }}</strong><small>{{ f.size_bytes|filesize }} · {{ f.uploaded_by or '-' }}</small></div><i class="bi bi-chevron-left"></i></a>
+    {% else %}<div class="text-muted p-4">No ISO/VSDX files matched your search.</div>{% endfor %}
+  </div>
+</div>
+{% else %}<div class="dash-card p-4 text-muted">Enter a search term in the top search bar.</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup macOS environment",
+      "type": "shell",
+      "command": "./scripts/setup_macos.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": ".venv/bin/python -m pytest -q",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

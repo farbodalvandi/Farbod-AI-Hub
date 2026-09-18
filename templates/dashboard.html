@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Farbod AI-Hub{% endblock %}
+{% block page_heading %}Dashboard{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+  <div class="hero-copy">
+    <span class="hero-kicker">INTELLIGENT INFRASTRUCTURE PLATFORM</span>
+    <h2>Welcome, <strong>{{ current_user.full_name or current_user.username }}</strong></h2>
+    <p>Monitor. Manage. Analyze. Automate. Turn your datacenter into intelligence.</p>
+    <form class="dashboard-ai-command" action="{{ url_for('ai_assistant') }}" method="get">
+      <span class="command-orb"><i class="bi bi-stars"></i></span>
+      <input name="q" placeholder="Ask anything about your infrastructure..." aria-label="Ask AI about infrastructure">
+      <button type="submit">Ask AI <i class="bi bi-arrow-up-right"></i></button>
+    </form>
+    <div class="ai-suggestion-row"><span>Try</span><a href="{{url_for('ai_assistant',q='HPE')}}">HPE assets</a><a href="{{url_for('file_search',q='Firmware')}}">Firmware files</a><a href="{{url_for('monitoring')}}">Health status</a></div>
+    <div class="hero-actions">
+      <a class="hero-btn primary" href="{{ url_for('asset_list', table=(SCHEMAS|list)[0]) }}"><i class="bi bi-plus-circle-fill"></i> Add Asset</a>
+      <a class="hero-btn" href="{{ url_for('diagram_page') }}"><i class="bi bi-diagram-3-fill"></i> Infrastructure Map</a>
+    </div>
+  </div>
+  <div class="hero-stats">
+    {% for key, spec in SCHEMAS.items() %}
+    <a href="{{ url_for('asset_list', table=key) }}" class="hero-stat">
+      <i class="bi {{ spec.icon }}"></i><strong>{{ counts[key] }}</strong><span>{{ spec.label }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="operations-strip">
+  <article class="spatial-card status-healthy"><div class="metric-icon"><i class="bi bi-box-seam"></i></div><div><span>TOTAL ASSETS</span><strong>{{ summary.total }}</strong><small>Across {{ SCHEMAS|length }} categories</small></div></article>
+  <article class="spatial-card status-healthy"><div class="metric-icon"><i class="bi bi-check2-circle"></i></div><div><span>HEALTHY</span><strong>{{ summary.healthy }}</strong><small>Reported operational</small></div></article>
+  <article class="spatial-card status-warning"><div class="metric-icon"><i class="bi bi-exclamation-triangle"></i></div><div><span>ATTENTION</span><strong>{{ summary.warning + summary.critical }}</strong><small>{{ summary.critical }} critical conditions</small></div></article>
+  <article class="spatial-card"><div class="metric-icon"><i class="bi bi-broadcast-pin"></i></div><div><span>MONITORED</span><strong>{{ monitoring_devices|length }}</strong><small>Registered endpoints</small></div></article>
+</div>
+
+<div class="section-title"><div><span>OVERVIEW</span><h3>Infrastructure Health</h3></div><a href="{{ url_for('diagram_page') }}">View all <i class="bi bi-arrow-right"></i></a></div>
+
+<div class="dashboard-panels">
+  <div class="dash-card health-card">
+    <div class="dash-card-head"><h4><i class="bi bi-heart-pulse-fill"></i> System Health</h4><span class="status-good">Operational</span></div>
+    <div class="health-body">
+      <div class="health-ring"><div><strong>{{ ((summary.healthy / summary.total * 100)|round|int) if summary.total else 0 }}%</strong><small>Healthy</small></div></div>
+      <div class="health-list">
+        <div><span class="dot healthy"></span><b>Inventory</b><strong>{{ summary.total }} assets</strong></div>
+        <div><span class="dot healthy"></span><b>Database</b><strong>Ready</strong></div>
+        <div><span class="dot {% if summary.critical %}critical{% else %}healthy{% endif %}"></span><b>Critical states</b><strong>{{ summary.critical }}</strong></div>
+        <div><span class="dot healthy"></span><b>Users</b><strong id="dashboardOnlineCount">— online</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-card alerts-card">
+    <div class="dash-card-head"><h4><i class="bi bi-bell-fill"></i> Recent Activity</h4><span class="activity-live"><span></span> Live</span></div>
+    <div class="activity-list">
+      {% for event in recent_activity %}<div><i class="bi bi-activity activity-icon"></i><div><b>{{ event.action|replace('_',' ')|title }}</b><small>{{ event.details or 'Platform activity' }} · {{ event.username or 'system' }}</small></div><time>{{ event.created_at[11:16] if event.created_at else 'Now' }}</time></div>
+      {% else %}<div><i class="bi bi-database-check activity-icon"></i><div><b>Asset database ready</b><small>New activity will appear here.</small></div><time>Now</time></div>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="section-title compact"><div><span>QUICK ACCESS</span><h3>Manage Infrastructure</h3></div></div>
+<div class="quick-grid">
+  {% for key, spec in SCHEMAS.items() %}
+  <a class="quick-card" href="{{ url_for('asset_list', table=key) }}"><div class="quick-icon"><i class="bi {{ spec.icon }}"></i></div><div><strong>{{ spec.label }}</strong><small>{{ counts[key] }} assets</small></div><i class="bi bi-chevron-right"></i></a>
+  {% endfor %}
+  <a class="quick-card" href="{{ url_for('diagram_page') }}"><div class="quick-icon diagram"><i class="bi bi-diagram-3-fill"></i></div><div><strong>Relationship Diagram</strong><small>Visual topology</small></div><i class="bi bi-chevron-right"></i></a>
+</div>
+
+<div class="section-title compact"><div><span>INVENTORY</span><h3>Asset Summary</h3></div></div>
+<div class="summary-table dash-card">
+  <div class="summary-row summary-head"><span>Asset Type</span><span>Quantity</span><span>Status</span><span>Action</span></div>
+  {% for key, spec in SCHEMAS.items() %}
+  <div class="summary-row"><span><i class="bi {{ spec.icon }}"></i> {{ spec.label }}</span><span class="qty">{{ counts[key] }}</span><span><b class="status-pill"><span></span> Managed</b></span><a href="{{ url_for('asset_list', table=key) }}">Open <i class="bi bi-arrow-right"></i></a></div>
+  {% endfor %}
+</div>
+<div class="section-title compact"><div><span>MEDIA LIBRARY</span><h3>ISO &amp; Visio Library</h3></div></div>
+<div class="dash-card iso-card">
+  <div class="dash-card-head">
+    <h4><i class="bi bi-collection-fill"></i> ISO &amp; Visio Files</h4>
+    {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor %}
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#isoUploadModal"><i class="bi bi-cloud-arrow-up"></i> Upload ISO / VSDX</button>
+    {% endif %}
+  </div>
+  <div class="iso-list">
+    {% for iso in isos %}
+    <div class="iso-row">
+      <div class="iso-row-name"><i class="bi {% if (iso.media_type or "iso") == "vsdx" %}bi-diagram-3-fill{% else %}bi-disc{% endif %}"></i><div><strong>{{ iso.original_name }}</strong>{% if iso.notes %}<small>{{ iso.notes }}</small>{% endif %}</div></div>
+      <div class="iso-row-meta">{{ iso.size_bytes|filesize }}</div>
+      <div class="iso-row-meta">{{ iso.uploaded_by or '-' }}</div>
+      <div class="iso-row-meta">{{ iso.created_at[:16] if iso.created_at else '-' }}</div>
+      <div class="iso-row-actions">
+        {% if (iso.media_type or "iso") == "vsdx" %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('iso_view', iso_id=iso.id) }}" title="View Visio diagram"><i class="bi bi-eye"></i></a>
+        {% endif %}
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('iso_download', iso_id=iso.id) }}" title="Download"><i class="bi bi-download"></i></a>
+        {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.manager %}
+        <form method="post" action="{{ url_for('iso_delete', iso_id=iso.id) }}" class="d-inline" onsubmit="return confirm('Delete this ISO file?')">
+          <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="iso-empty text-muted text-center py-4">No ISO files uploaded yet.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ISO upload window -->
+<div class="modal fade import-data-modal" id="isoUploadModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('iso_upload') }}" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-disc-fill me-2"></i>Upload ISO / VSDX File</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">ISO / VSDX File</label>
+          <input type="file" name="file" accept=".iso,.vsdx" class="form-control mb-3" required>
+          <label class="form-label">Notes (optional)</label>
+          <input type="text" name="notes" class="form-control" placeholder="e.g. Windows Server 2022 Standard">
+          <p class="text-muted small mt-3 mb-0">Accepted formats: .iso and .vsdx. VSDX diagrams can be previewed directly in the library.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  const el=document.getElementById('dashboardOnlineCount'), count=document.getElementById('onlineCount');
+  function sync(){ if(el && count) el.textContent=(count.textContent||'0')+' online'; }
+  setTimeout(sync,500); setInterval(sync,1000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Setting | Farbod AI-Hub</title><link rel="stylesheet" href="{{url_for('static',filename='hub.css')}}"><link rel="stylesheet" href="{{url_for('static',filename='vendor/css/bootstrap-icons.css')}}">
+<style>
+.settings-wrap{max-width:1200px;margin:0 auto;padding:40px 5vw;color:#eaf2ff}.settings-card{background:rgba(9,23,38,.86);border:1px solid rgba(120,180,220,.18);border-radius:20px;padding:24px;margin:18px 0}.settings-card h2{font-size:20px}.settings-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:center}.settings-grid input,.settings-grid select{width:100%;padding:11px;border-radius:10px;border:1px solid #29445c;background:#071522;color:#fff}.settings-grid button{padding:11px 16px;border:0;border-radius:10px;background:#48bff5;color:#03111a;font-weight:700}.settings-note{color:#7892a8;font-size:12px;line-height:1.6}.back-hub{color:#83abc5;text-decoration:none}
+</style></head><body class="placeholder-page"><div class="settings-wrap"><div class="settings-topbar"><a class="back-hub" href="{{url_for('hardware_hub')}}"><i class="bi bi-arrow-left"></i> Back to Hub</a><button class="hub-theme" id="hubTheme"><i class="bi bi-moon-stars-fill"></i></button></div>
+<h1><i class="bi bi-sliders2"></i> Setting</h1><p class="settings-note">Manage login usernames, passwords, roles and account status. Role permissions are applied immediately.</p>
+<div class="settings-card"><h2>Create Username</h2><form method="post" action="{{url_for('user_create')}}"><div class="settings-grid"><input name="username" placeholder="Username" required><input type="password" name="password" placeholder="Password" required><input name="full_name" placeholder="Full name"><select name="role">{% for r in roles %}<option value="{{r}}">{{r|upper}}</option>{% endfor %}</select><button>Create</button></div></form></div>
+<div class="settings-card"><h2>User Accounts</h2>
+{% for u in users %}<form method="post" action="{{url_for('user_edit',user_id=u.id)}}" class="settings-grid" style="margin:12px 0">
+<input value="{{u.username}}" readonly><input name="password" type="password" placeholder="New password (optional)"><input name="full_name" value="{{u.full_name or ''}}" placeholder="Full name">
+<select name="role">{% for r in roles %}<option value="{{r}}" {% if u.role==r %}selected{% endif %}>{{r|upper}}</option>{% endfor %}</select><button>Save</button>
+<input type="hidden" name="active" value="{{1 if u.active else 0}}">
+</form>{% endfor %}
+</div>
+<div class="settings-card"><h2>Access Model</h2><p class="settings-note"><b>ADMIN</b> → all four menus and user settings. &nbsp; <b>MANAGEMENT</b> → Farbod Asset Manager with edit rights. &nbsp; <b>OPERATOR</b> → view-only Farbod Asset Manager + Knowledge.</p></div>
+</div><script>(function(){const r=document.documentElement,b=document.getElementById('hubTheme');if(!b)return;let t=localStorage.getItem('farbod-theme')||'dark';function a(){r.dataset.theme=t;b.innerHTML=t==='dark'?'<i class="bi bi-sun-fill"></i>':'<i class="bi bi-moon-stars-fill"></i>'}a();b.onclick=()=>{t=t==='dark'?'light':'dark';localStorage.setItem('farbod-theme',t);a()}})();</script></body></html>

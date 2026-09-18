@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ spec.label }} 360° | Farbod AI-Hub{% endblock %}
+{% block page_heading %}Asset 360°{% endblock %}
+{% block content %}
+<div class="asset360-shell">
+  <header class="asset360-hero spatial-card" data-tilt>
+    <div class="asset360-device">
+      <div class="device-halo"></div>
+      <div class="device-chassis"><i class="bi {{ spec.icon }}"></i><span></span><span></span><span></span></div>
+    </div>
+    <div class="asset360-title">
+      <div class="intel-label">{{ spec.label|upper }} · ASSET #{{ row_id }}</div>
+      <h2>{{ asset.model or asset.hostname or asset.asset_tag or spec.label }}</h2>
+      <p>{{ asset.manufacturer or 'Infrastructure Asset' }}{% if asset.serial_number %} · Serial {{ asset.serial_number }}{% endif %}</p>
+      <div class="asset360-badges">
+        <span class="health-badge {{ health }}"><i></i>{{ (asset.status if 'status' in asset.keys() and asset.status else health)|title }}</span>
+        {% if asset.datacenter %}<span><i class="bi bi-building"></i>{{ asset.datacenter }}</span>{% endif %}
+        {% if asset.rack %}<span><i class="bi bi-grid-3x3-gap"></i>{{ asset.rack }}{% if asset.u_position %} · U{{ asset.u_position }}{% endif %}</span>{% endif %}
+      </div>
+    </div>
+    <div class="asset360-actions">
+      <a class="spatial-button primary" href="{{ url_for('asset_list', table=table) }}"><i class="bi bi-arrow-left"></i> Inventory</a>
+      <a class="spatial-button" href="{{ url_for('sub_objects', table=table, row_id=row_id) }}"><i class="bi bi-boxes"></i> Components</a>
+      <a class="spatial-button" href="{{ url_for('diagram_page') }}"><i class="bi bi-diagram-3"></i> Topology</a>
+    </div>
+  </header>
+
+  <section class="asset360-kpis">
+    <article class="spatial-card"><span>PROFILE COMPLETION</span><strong>{{ completion }}%</strong><div class="mini-progress"><i style="width:{{ completion }}%"></i></div></article>
+    <article class="spatial-card"><span>COMPONENTS</span><strong>{{ components|length }}</strong><small>Attached sub-objects</small></article>
+    <article class="spatial-card"><span>RELATIONSHIPS</span><strong>{{ relationships|length }}</strong><small>Infrastructure links</small></article>
+    <article class="spatial-card"><span>MONITORING</span><strong>{{ 'Connected' if monitoring_device else 'Not linked' }}</strong><small>{{ monitoring_device.last_seen[:16] if monitoring_device and monitoring_device.last_seen else 'No live endpoint' }}</small></article>
+  </section>
+
+  <div class="asset360-grid">
+    <section class="spatial-card asset360-profile">
+      <div class="panel-heading"><div><span>INVENTORY RECORD</span><h3>Technical profile</h3></div><i class="bi bi-sliders"></i></div>
+      <div class="profile-field-grid">
+        {% for field in fields %}
+        <div class="profile-field {% if not field.value %}is-empty{% endif %}"><span>{{ field.label }}</span><strong>{{ field.value or 'Not specified' }}</strong></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <aside class="asset360-side">
+      <section class="spatial-card">
+        <div class="panel-heading"><div><span>LIVE CONTEXT</span><h3>Health connection</h3></div><i class="bi bi-activity"></i></div>
+        {% if monitoring_device %}
+        <div class="live-connection"><i class="bi bi-broadcast-pin"></i><div><strong>{{ monitoring_device.name }}</strong><span>{{ monitoring_device.management_ip }}</span></div><em class="health-badge {{ health }}">{{ monitoring_device.status or 'Pending' }}</em></div>
+        <a class="panel-link" href="{{ url_for('monitoring') }}">Open monitoring <i class="bi bi-arrow-right"></i></a>
+        {% else %}
+        <div class="context-empty"><i class="bi bi-plug"></i><p>No matching monitoring endpoint. Add this asset's management IP to enable live context.</p></div>
+        <a class="panel-link" href="{{ url_for('monitoring') }}">Connect endpoint <i class="bi bi-arrow-right"></i></a>
+        {% endif %}
+      </section>
+
+      <section class="spatial-card">
+        <div class="panel-heading"><div><span>CONNECTED ASSETS</span><h3>Relationships</h3></div><i class="bi bi-bezier2"></i></div>
+        <div class="relationship-list">
+          {% for rel in relationships %}
+          <a href="{{ url_for('asset_detail', table=rel.table, row_id=rel.id) }}"><i class="bi bi-link-45deg"></i><div><strong>{{ rel.label }}</strong><span>{{ rel.type }} · {{ rel.link.link_type or rel.direction }}</span></div><i class="bi bi-chevron-right"></i></a>
+          {% else %}<div class="context-empty"><i class="bi bi-diagram-3"></i><p>No relationships have been mapped for this asset.</p></div>{% endfor %}
+        </div>
+      </section>
+
+      <section class="spatial-card">
+        <div class="panel-heading"><div><span>AUDIT TRAIL</span><h3>Recent activity</h3></div><i class="bi bi-clock-history"></i></div>
+        <div class="asset-timeline">
+          {% for event in activity %}<div><i></i><p><strong>{{ event.action|replace('_',' ')|title }}</strong><span>{{ event.username or 'system' }} · {{ event.created_at[:16]|replace('T',' ') }}</span></p></div>
+          {% else %}<div><i></i><p><strong>No recorded changes</strong><span>Activity will appear here.</span></p></div>{% endfor %}
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

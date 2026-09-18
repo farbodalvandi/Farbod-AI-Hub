@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-people"></i> User & Access Management</h4>
+<p class="text-muted small">4 access levels: <b>viewer</b> (view only and export) &lt; <b>editor</b> (add/edit) &lt; <b>manager</b> (+delete and list management) &lt; <b>admin</b> (+User Management)</p>
+
+<div class="table-responsive shadow-sm mb-4">
+<table class="table table-sm bg-white align-middle">
+  <thead class="table-light"><tr><th>Username</th><th>Name</th><th>Role</th><th>Active</th><th style="width:260px">Actions</th></tr></thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <form method="post" action="{{ url_for('user_edit', user_id=u['id']) }}">
+      <td>{{ u['username'] }}</td>
+      <td><input class="form-control form-control-sm" name="full_name" value="{{ u['full_name'] or '' }}"></td>
+      <td>
+        <select class="form-select form-select-sm" name="role">
+          {% for r in roles %}<option value="{{ r }}" {% if u['role']==r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+        </select>
+      </td>
+      <td class="text-center"><input type="checkbox" name="active" {% if u['active'] %}checked{% endif %}></td>
+      <td class="text-nowrap">
+        <input type="password" name="password" class="form-control form-control-sm d-inline-block" style="width:120px" placeholder="New password (optional)">
+        <button class="btn btn-sm btn-outline-primary"><i class="bi bi-check2"></i></button>
+      </td>
+      </form>
+      <td>
+        {% if u['username'] != current_user.username %}
+        <form method="post" action="{{ url_for('user_delete', user_id=u['id']) }}" onsubmit="return confirm('Delete this item?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="card shadow-sm" style="max-width:500px">
+  <div class="card-body">
+    <h6>Add New User</h6>
+    <form method="post" action="{{ url_for('user_create') }}">
+      <div class="mb-2"><input class="form-control form-control-sm" name="username" placeholder="Username" required></div>
+      <div class="mb-2"><input class="form-control form-control-sm" name="full_name" placeholder="Full name"></div>
+      <div class="mb-2"><input type="password" class="form-control form-control-sm" name="password" placeholder="Password" required></div>
+      <div class="mb-2">
+        <select class="form-select form-select-sm" name="role">
+          {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-sm btn-primary">Add</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ module.title }} | Farbod AI-Hub</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap-icons.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='hub.css') }}">
+</head><body class="module-login-page">
+<div class="login-bg"></div><main class="module-login-wrap">
+<a class="back-hub" href="{{ url_for('hardware_hub') }}"><i class="bi bi-arrow-left"></i> AI-Hub</a>
+<section class="module-login-card">
+<div class="module-icon"><i class="bi {{ module.icon }}"></i></div>
+<span class="eyebrow">MODULE ACCESS</span><h1>{{ module.title }}</h1><p>{{ module.description }}</p>
+{% with messages=get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}<div class="module-alert">{{ msg }}</div>{% endfor %}{% endwith %}
+<form method="post" action="{{ url_for('module_login', module_key=module_key, next=request.args.get('next','')) }}">
+<label>Username<input name="username" autocomplete="username" required autofocus></label>
+<label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+<button type="submit">Sign in <i class="bi bi-arrow-right"></i></button>
+</form>
+</section></main></body></html>

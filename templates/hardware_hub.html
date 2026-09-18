@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Farbod AI-Hub | Spatial Infrastructure</title>
+  <link rel="stylesheet" href="{{url_for('static',filename='vendor/css/bootstrap-icons.css')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='hub.css',v=APP_VERSION)}}">
+</head>
+<body class="hub-page v11-hub">
+  <div class="ai-grid"></div><div class="hub-aurora one"></div><div class="hub-aurora two"></div>
+  <header class="hub-header">
+    <div class="hub-brand"><span class="hub-logo"><i class="bi bi-cpu-fill"></i></span><div><b>FARBOD <em>AI-HUB</em></b><small>SPATIAL INFRASTRUCTURE OPERATING SYSTEM</small></div></div>
+    <div class="hub-actions"><span class="system-health"><i></i> Platform operational</span><span class="hub-clock" id="hubClock"></span><button class="hub-theme" id="hubTheme" aria-label="Toggle theme"><i class="bi bi-sun-fill"></i></button><a class="hub-user" href="{{url_for('settings')}}"><i class="bi bi-person-circle"></i> {{current_user.full_name or current_user.username}}</a></div>
+  </header>
+
+  <main class="spatial-hub-main">
+    <section class="spatial-intro">
+      <div class="hub-copy">
+        <span class="eyebrow">INTELLIGENT DATACENTER CONTROL PLANE</span>
+        <h1>Infrastructure<br><strong>in one dimension.</strong></h1>
+        <p>See every asset, connection, document and operational signal through one secure workspace.</p>
+        <form action="{{url_for('ai_assistant')}}" method="get" class="hub-ai-search"><i class="bi bi-stars"></i><input name="q" placeholder="Ask your infrastructure..."><button>Ask Farbod AI <i class="bi bi-arrow-up-right"></i></button></form>
+        <div class="hub-live-metrics">
+          <div><i class="bi bi-box-seam"></i><span>Total assets</span><strong>{{summary.total}}</strong></div>
+          <div><i class="bi bi-heart-pulse"></i><span>Healthy</span><strong>{{summary.healthy}}</strong></div>
+          <div><i class="bi bi-broadcast"></i><span>Live endpoints</span><strong>{{connected}}/{{monitored}}</strong></div>
+          <div><i class="bi bi-file-earmark-text"></i><span>Indexed knowledge</span><strong>{{knowledge_count}}</strong></div>
+        </div>
+      </div>
+
+      <div class="infrastructure-core" aria-label="Infrastructure intelligence core">
+        <div class="core-orbit orbit-a"><span class="orbit-node server"><i class="bi bi-server"></i></span></div>
+        <div class="core-orbit orbit-b"><span class="orbit-node storage"><i class="bi bi-hdd-rack"></i></span></div>
+        <div class="core-orbit orbit-c"><span class="orbit-node network"><i class="bi bi-diagram-3"></i></span></div>
+        <div class="core-sphere"><div class="core-grid"></div><i class="bi bi-stars"></i><strong>AI CORE</strong><span>Connected intelligence</span></div>
+        <div class="core-shadow"></div>
+      </div>
+    </section>
+
+    <section class="spatial-workspaces">
+      <div class="hub-section-head"><div><span>WORKSPACES</span><h2>Operate your infrastructure</h2></div><p>Move from inventory to live insight without losing context.</p></div>
+      <div class="workspace-grid v11-grid">
+        <a class="workspace-card featured spatial-tilt" href="{{url_for('ai_assistant')}}"><div class="card-sheen"></div><div class="wc-icon ai"><i class="bi bi-stars"></i></div><span>INTELLIGENCE</span><h2>AI Assistant</h2><p>Ask questions across inventory and technical evidence.</p><small>Evidence-aware · Local-ready</small><i class="bi bi-arrow-up-right wc-arrow"></i></a>
+        <a class="workspace-card spatial-tilt" href="{{url_for('dashboard')}}"><div class="card-sheen"></div><div class="wc-icon"><i class="bi bi-hdd-stack-fill"></i></div><span>CONTROL PLANE</span><h2>Asset Manager</h2><p>360° profiles, lifecycle data and connected assets.</p><small>{{summary.total}} managed assets</small><i class="bi bi-arrow-up-right wc-arrow"></i></a>
+        <a class="workspace-card spatial-tilt" href="{{url_for('monitoring')}}"><div class="card-sheen"></div><div class="wc-icon"><i class="bi bi-activity"></i></div><span>OPERATIONS</span><h2>Monitoring</h2><p>Live connectors, health state and agent diagnosis.</p><small>{{monitored}} registered endpoints</small><i class="bi bi-arrow-up-right wc-arrow"></i></a>
+        <a class="workspace-card spatial-tilt" href="{{url_for('knowledge_home')}}"><div class="card-sheen"></div><div class="wc-icon"><i class="bi bi-book-half"></i></div><span>KNOWLEDGE</span><h2>Knowledge Center</h2><p>Technical documents with searchable evidence.</p><small>{{knowledge_count}} indexed documents</small><i class="bi bi-arrow-up-right wc-arrow"></i></a>
+        <a class="workspace-card spatial-tilt" href="{{url_for('equipment_profile')}}"><div class="card-sheen"></div><div class="wc-icon"><i class="bi bi-cpu-fill"></i></div><span>PROFILES</span><h2>Equipment</h2><p>Organized banks, profiles and technical files.</p><small>Structured engineering context</small><i class="bi bi-arrow-up-right wc-arrow"></i></a>
+        <a class="workspace-card spatial-tilt" href="{{url_for('diagram_page')}}"><div class="card-sheen"></div><div class="wc-icon"><i class="bi bi-bezier2"></i></div><span>TOPOLOGY</span><h2>Infrastructure Map</h2><p>Trace physical and logical asset relationships.</p><small>Interactive connection graph</small><i class="bi bi-arrow-up-right wc-arrow"></i></a>
+      </div>
+    </section>
+    <footer class="hub-foot"><span><i></i> Encrypted local workspace</span><span>ROLE · {{current_user.role|upper}}</span><span>FARBOD AI-HUB v{{APP_VERSION}}</span><a href="{{url_for('logout')}}">Logout <i class="bi bi-box-arrow-right"></i></a></footer>
+  </main>
+  <script>
+  (()=>{
+    const root=document.documentElement, theme=document.getElementById('hubTheme'), clock=document.getElementById('hubClock');
+    let mode=localStorage.getItem('farbod-theme')||'dark';
+    const apply=()=>{root.dataset.theme=mode;theme.innerHTML=mode==='dark'?'<i class="bi bi-sun-fill"></i>':'<i class="bi bi-moon-stars-fill"></i>'}; apply();
+    theme.onclick=()=>{mode=mode==='dark'?'light':'dark';localStorage.setItem('farbod-theme',mode);apply()};
+    const tick=()=>clock.textContent=new Intl.DateTimeFormat('en',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date()); tick();setInterval(tick,1000);
+    if(!matchMedia('(prefers-reduced-motion: reduce)').matches) document.querySelectorAll('.spatial-tilt').forEach(card=>{
+      card.addEventListener('pointermove',e=>{const r=card.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;card.style.transform=`perspective(900px) rotateX(${-y*5}deg) rotateY(${x*6}deg) translateY(-7px)`;card.style.setProperty('--mx',`${(x+.5)*100}%`);card.style.setProperty('--my',`${(y+.5)*100}%`)});
+      card.addEventListener('pointerleave',()=>card.style.transform='');
+    });
+  })();
+  </script>
+</body></html>

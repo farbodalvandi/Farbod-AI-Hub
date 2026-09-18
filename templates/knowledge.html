@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knowledge | Farbod AI-Hub</title><link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap-icons.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='hub.css') }}">
+</head><body class="knowledge-page">
+<header class="knowledge-top"><div class="kh-left"><a href="{{ url_for('hardware_hub') }}" class="kh-brand"><i class="bi bi-cpu-fill"></i> AI-Hub</a><a href="{{ url_for('hardware_hub') }}" class="kh-back"><i class="bi bi-arrow-left"></i> Back to Hub</a></div><div class="kh-right"><b>Knowledge</b><button class="hub-theme" id="hubTheme"><i class="bi bi-moon-stars-fill"></i></button><a href="{{ url_for('module_logout', module_key='knowledge') }}" class="kh-logout">Sign out</a></div></header>
+<div class="knowledge-layout">
+<aside class="knowledge-sidebar">
+<div class="sidebar-title"><i class="bi bi-book-half"></i><div><b>Knowledge Base</b><small>Technical Library</small></div></div>
+<nav>
+{% for key,label in categories.items() %}<a class="{% if active_category==key %}active{% endif %}" href="{{ url_for('knowledge_home', category=key) }}"><i class="bi {% if key=='server' %}bi-server{% elif key=='storage' %}bi-database-fill{% else %}bi-hdd-network-fill{% endif %}"></i><span>{{ label }}</span><i class="bi bi-chevron-right"></i></a>{% endfor %}
+</nav>
+<div class="ai-side"><i class="bi bi-stars"></i><b>AI Ready</b><span>Technical knowledge workspace</span></div>
+</aside>
+<main class="knowledge-main">
+<div class="knowledge-hero"><div><span class="eyebrow">HARDWARE KNOWLEDGE</span><h1>{{ categories[active_category] }} <strong>Library</strong></h1><p>Upload and view technical PDFs and Word documents with searchable descriptions.</p></div><div class="ai-orb"><i class="bi bi-cpu"></i><span>AI<br>COMPUTING</span></div></div>
+{% with messages=get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}<div class="module-alert">{{ msg }}</div>{% endfor %}{% endwith %}
+<section class="upload-panel">
+<form action="{{ url_for('knowledge_upload') }}" method="post" enctype="multipart/form-data">
+<input type="hidden" name="category" value="{{ active_category }}">
+<div class="upload-file"><i class="bi bi-cloud-arrow-up-fill"></i><input type="file" name="file" accept=".pdf,.doc,.docx" required></div>
+<input class="description-input" name="description" placeholder="Description — e.g. HPE DL380 Gen11 Service Guide" required>
+<button type="submit"><i class="bi bi-upload"></i> Upload</button>
+</form><small>Supported: PDF, DOC, DOCX</small>
+</section>
+<div class="library-head"><h2>Documents</h2><span>{{ files|length }} file(s)</span></div>
+<div class="file-grid">
+{% for f in files %}
+<a class="file-card" href="{{ url_for('knowledge_file', file_id=f.id) }}">
+<div class="file-type {% if f.original_name.lower().endswith('.pdf') %}pdf{% else %}word{% endif %}"><i class="bi {% if f.original_name.lower().endswith('.pdf') %}bi-file-earmark-pdf-fill{% else %}bi-file-earmark-word-fill{% endif %}"></i></div>
+<div><h3>{{ f.description }}</h3><p>{{ f.original_name }}</p><small>{{ f.created_at[:16].replace('T',' ') }} · {{ f.size_bytes|filesize }}</small></div><i class="bi bi-box-arrow-up-right"></i>
+</a>
+{% else %}<div class="empty-library"><i class="bi bi-folder2-open"></i><h3>No documents yet</h3><p>Upload the first technical document for this category.</p></div>{% endfor %}
+</div>
+</main></div><script>(function(){const r=document.documentElement,b=document.getElementById('hubTheme');let t=localStorage.getItem('farbod-theme')||'dark';function a(){r.dataset.theme=t;b.innerHTML=t==='dark'?'<i class="bi bi-sun-fill"></i>':'<i class="bi bi-moon-stars-fill"></i>'}a();b.onclick=()=>{t=t==='dark'?'light':'dark';localStorage.setItem('farbod-theme',t);a()}})();</script></body></html>

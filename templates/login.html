@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Secure Login | Farbod AI-Hub{% endblock %}
+{% block content %}
+<div class="v8-login-shell">
+  <div class="v8-stars" aria-hidden="true"></div>
+  <header class="v8-login-header">
+    <div class="v8-wordmark"><strong>FARBOD <span>AI-HUB</span></strong><small>INTELLIGENT INFRASTRUCTURE. REAL INSIGHTS.</small></div>
+    <div class="v8-mantra">MONITOR&nbsp;&nbsp;•&nbsp;&nbsp;MANAGE&nbsp;&nbsp;•&nbsp;&nbsp;ANALYZE&nbsp;&nbsp;•&nbsp;&nbsp;AUTOMATE<small>A SMARTER DATACENTER TOMORROW</small></div>
+  </header>
+
+  <aside class="v8-capabilities" aria-label="Platform capabilities">
+    <span>SERVERS</span><span>STORAGE</span><span>SAN</span><span>NETWORK</span><span>FACILITIES</span><span>AI ASSIST</span>
+  </aside>
+
+  <main class="v8-login-stage">
+    <section class="v8-login-card">
+      <div class="v8-ai-orb"><i class="bi bi-stars"></i></div>
+      <p class="v8-welcome">Welcome to</p>
+      <h1>FARBOD <strong>AI-HUB</strong></h1>
+      <p class="v8-subtitle">Secure Access to Your Infrastructure</p>
+      <form method="post" autocomplete="on" class="v8-login-form">
+        <label class="v8-input"><i class="bi bi-person"></i><input id="username" name="username" type="text" placeholder="Username" required autofocus autocomplete="username"></label>
+        <label class="v8-input"><i class="bi bi-lock"></i><input id="password" name="password" type="password" placeholder="Password" required autocomplete="current-password"><button type="button" id="passwordToggle" aria-label="Show password"><i class="bi bi-eye-slash"></i></button></label>
+        <div class="v8-options"><label><input type="checkbox" name="remember"> Remember me</label><span><i class="bi bi-shield-check"></i> Secure Access</span></div>
+        <button class="v8-submit" type="submit">Login <i class="bi bi-arrow-right"></i></button>
+      </form>
+    </section>
+  </main>
+
+  <div class="v8-quote">“Data turns infrastructure<br>into intelligence.”</div>
+  <footer class="v8-login-footer"><div><b>FARBOD AI-HUB</b><small>BUILT FOR PEOPLE WHO KEEP THE WORLD RUNNING</small></div><div><b>v{{APP_VERSION}} · SPATIAL EDITION</b><small>© 2026 Farbod AI-Hub</small></div></footer>
+</div>
+{% endblock %}
+{% block scripts %}<script>(function(){const p=document.getElementById('password'),b=document.getElementById('passwordToggle');if(b&&p)b.onclick=()=>{p.type=p.type==='password'?'text':'password';b.innerHTML=p.type==='password'?'<i class="bi bi-eye-slash"></i>':'<i class="bi bi-eye"></i>'}})();</script>{% endblock %}

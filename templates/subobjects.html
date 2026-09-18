@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Components{% endblock %}
+{% block content %}
+<a href="{{ url_for('asset_list', table=table) }}" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-right"></i> Back</a>
+<h5>Components for: {{ db_label if db_label else (asset['hostname'] or asset['model'] or asset['asset_tag'] or ('#' ~ asset['id'])) }}</h5>
+
+<div class="table-responsive shadow-sm mb-3">
+<table class="table table-sm bg-white">
+  <thead class="table-light"><tr><th>Name</th><th>Type</th><th>Notes</th><th>Files</th><th></th></tr></thead>
+  <tbody>
+    {% for s in subs %}
+    <tr>
+      <td>{{ s['name'] }}</td><td>{{ s['obj_type'] }}</td><td>{{ s['notes'] }}</td>
+      <td>{% set subfiles = db_sub_files(s['id']) %}{% for f in subfiles %}<div><a target="_blank" href="{{ url_for('sub_object_file_view', file_id=f['id']) }}">{{ f['original_name'] }}</a><small class="text-muted"> — {{ f['description'] }}</small></div>{% else %}<span class="text-muted">None</span>{% endfor %}
+      {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor %}<form method="post" enctype="multipart/form-data" action="{{ url_for('sub_object_file_upload', sub_id=s['id']) }}" class="mt-1"><div class="input-group input-group-sm"><input type="file" class="form-control" name="file" accept=".xlsx,.xls,.pdf,.doc,.docx,.csv,.txt,.png,.jpg,.jpeg,.zip" required><input class="form-control" name="description" placeholder="Description" required><button class="btn btn-outline-primary">Upload</button></div></form>{% endif %}</td>
+      <td>
+        {% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.manager %}
+        <form method="post" action="{{ url_for('sub_object_delete', sub_id=s['id']) }}" onsubmit="return confirm('Delete this item?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-center text-muted">No components registered</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if ROLE_LEVEL[current_user.role] >= ROLE_LEVEL.editor %}
+<div class="card shadow-sm" style="max-width:500px">
+  <div class="card-body">
+    <h6>Add New Component</h6>
+    <form method="post">
+      <div class="mb-2"><input class="form-control form-control-sm" name="name" placeholder="Name (e.g. NIC1, PSU2)" required></div>
+      <div class="mb-2"><input class="form-control form-control-sm" name="obj_type" placeholder="Type"></div>
+      <div class="mb-2"><input class="form-control form-control-sm" name="notes" placeholder="Notes"></div>
+      <button class="btn btn-sm btn-primary">Add</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<p class="text-muted small mt-3">To map this component to other assets, use the <a href="{{ url_for('diagram_page') }}">Relationship Diagram</a>.</p>
+{% endblock %}
