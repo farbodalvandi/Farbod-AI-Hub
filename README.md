@@ -1,102 +1,42 @@
-# Farbod AI-Hub v11 — Spatial macOS source edition
+# Farbod AI-Hub — Latest release: 28.2.4 Mac Final
 
-Farbod AI-Hub is a Flask-based infrastructure workspace for asset management,
-knowledge files, equipment profiles, monitoring and AI-assisted search. This
-edition runs directly from Python source and contains no EXE/PyInstaller build.
+The latest complete application is provided in **[Farbod_AI-Hub_v28.2.4_Mac_Final.zip](Farbod_AI-Hub_v28.2.4_Mac_Final.zip)**. Open the archive above and choose **Download raw file** to download it.
 
-Version 11 introduces a spatial enterprise interface, live infrastructure
-summary cards, an interactive AI core landing page, improved monitoring
-context, and an Asset 360° profile for every inventory record. AI asset search
-results now open the matching 360° profile directly.
+**Use the versioned ZIP for installation.** The loose source files in the repository root are retained from the earlier source edition; they have not been upgraded to 28.2.4. GitHub's green **Code → Download ZIP** downloads the entire repository, including those historical files, rather than just the current application package.
 
-## Requirements
+## Start on macOS
 
-- macOS with Python 3.11 or newer
-- VS Code with the Microsoft Python extension
-- Optional: Ollama for locally generated AI answers
-- Optional: Tesseract (`brew install tesseract`) for OCR
+1. Install and start Docker Desktop.
+2. Extract `Farbod_AI-Hub_v28.2.4_Mac_Final.zip`.
+3. Open Terminal in the extracted application folder and run `bash DOCKER_START.command`.
+4. Open `https://localhost`.
 
-## First setup
+The first build needs internet access to public image and package sources. This is a source package, not a signed macOS `.app` or DMG. Local Ollama defaults to `http://host.docker.internal:11434`; model weights are not bundled.
 
-Open the extracted project folder in VS Code, then run:
+## Upgrade an existing installation
 
-```bash
-chmod +x scripts/*.sh
-./scripts/setup_macos.sh
-./scripts/run_dev.sh
-```
+Back up first. Preserve `.env.docker` and `docker-data/`, overlay the extracted application files into the existing installation, and run `bash DOCKER_UPDATE.command`. Existing custom image references and data paths are retained.
 
-Open <http://127.0.0.1:5000>. The initial account is `admin` / `admin123`.
-Change this password immediately after the first login.
+## Included in 28.2.4
 
-VS Code automatically uses `.venv/bin/python`. You can also press **F5** and
-select **Farbod AI-Hub: Development** to run and debug the application.
+- Farbod branding and the original logo.
+- Independent Linux Health Command Library: searchable built-in/custom commands, full script editing, and no default-selected commands.
+- 1–256 network/SAN ports; eight FC and eight Ethernet ports per named ICB.
+- Optional warehouse identifiers with duplicate detection, atomic bulk issues, mandatory movement dates, and filtered Excel reports.
+- Five themes and the existing asset, equipment, automation, and knowledge features.
 
-## Daily development workflow
+## Validation and provenance
 
-```bash
-source .venv/bin/activate
-python app.py
-```
+The archive is the original 28.2.4 Mac Final package, without application changes. Python syntax (67 files), shell syntax (48 scripts), and ZIP integrity checks passed during publication preparation. A selected test run passed 19 tests and failed two existing tests in `tests/test_linux_health_integration.py`: missing database tables in the test setup and an expected HTTP 401 versus actual 422 response. Native macOS Docker Desktop execution and live hardware integration were not tested in this environment.
 
-Run tests before committing changes:
+The release includes configuration examples, not local databases, deployment secret files, or runtime data. See the package's release and validation notes for its earlier validation record.
 
-```bash
-python -m pytest -q
-```
-
-## Production-style execution on macOS
-
-The Flask development server is for coding and debugging. For stable LAN use:
-
-```bash
-./scripts/run_production.sh
-```
-
-The production script runs Gunicorn on `0.0.0.0:5000` by default. Override it
-without modifying code:
-
-```bash
-FARBOD_ASSET_HOST=192.168.100.200 FARBOD_ASSET_PORT=5000 ./scripts/run_production.sh
-```
-
-For HTTPS/443, place Caddy or Nginx in front of Gunicorn and keep this app on a
-non-privileged local port. Enable `FARBOD_ASSET_TRUST_PROXY=1` only behind a
-trusted reverse proxy that sets forwarding headers.
-
-## Environment variables
-
-See `.env.example` for standard local settings.
-
-| Variable | Default | Purpose |
-|---|---:|---|
-| `FARBOD_ASSET_HOST` | `127.0.0.1` dev / `0.0.0.0` production | Listen address |
-| `FARBOD_ASSET_PORT` | `5000` | Listen port |
-| `FARBOD_DATA_DIR` | project folder | Database and uploaded data location |
-| `FARBOD_ASSET_TRUST_PROXY` | `0` | Trust proxy forwarding headers |
-| `FLASK_DEBUG` | `0` | Development debugger/reloader |
-
-## Project structure
+SHA-256 of the release ZIP:
 
 ```text
-Farbod_AI-Hub/
-├── app.py                  Flask routes and development entry point
-├── wsgi.py                 Gunicorn production entry point
-├── database.py             SQLite schema, migrations and queries
-├── ai_engine.py            AI assistant integration
-├── document_search.py      Knowledge indexing and retrieval
-├── monitoring_connectors.py Infrastructure device connectors
-├── paths.py                Resource and writable-data paths
-├── requirements.txt        Runtime dependencies
-├── requirements-test.txt   Development/test dependencies
-├── scripts/                macOS setup and run commands
-├── .vscode/                Debugger, interpreter and test settings
-├── templates/              Jinja HTML templates
-├── static/                 CSS, JavaScript, images and offline vendors
-├── tests/                  Automated tests
-└── instance/               Runtime database and keys (created locally)
+61380ff7d4af454eb88d1cd241cc54cc1820f2fdacf02dfc408f947334bd2290
 ```
 
-The `instance/`, uploaded files, secrets and local virtual environment are
-excluded from Git. Back up `instance/dcam.db`, the secret key and uploaded data
-together when moving the application to another Mac or server.
+## Earlier versions
+
+The v26.1.4 archive and earlier source history remain available in this repository.
